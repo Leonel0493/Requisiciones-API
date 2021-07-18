@@ -30,16 +30,20 @@ namespace Requisiciones.DTO
                     return lstRequisitions;
                 
                 if (employee.idPuesto == 1)
-                    lstRequisitions = _dbContext.Requisitions.FromSqlRaw("exec RequisitionByApplicant @id", new SqlParameter("id", idApplicant)).ToList();
+                {
+                    //Ejemplo de ejecucion de querys
+                    //lstRequisitions = _dbContext.Requisitions.FromSqlRaw("exec RequisitionByApplicant @id", new SqlParameter("id", idApplicant)).ToList();
+                    lstRequisitions = _dbContext.Requisitions.Where(x => x.idEstado == 1 || x.idEstado == 3).ToList();
+                }
 
-                if(employee.idPuesto == 2)
-                    lstRequisitions = _dbContext.Requisitions.FromSqlRaw("exec RequisitionByPurchases").ToList();
+                if (employee.idPuesto == 2)
+                    lstRequisitions = _dbContext.Requisitions.Where(x => x.idEstado == 2).ToList();
 
                 return lstRequisitions;
             }
             catch(Exception e)
             {
-                lstRequisitions = null;
+                lstRequisitions = new List<Requisitions>();
                 return lstRequisitions;
             }
         }
@@ -72,12 +76,43 @@ namespace Requisiciones.DTO
             }
         }
 
+        public bool SaveRequisition(Requisitions requisition, int idEmployee)
+        {
+            try
+            {
+                if (requisition.cantidad <= 0 || String.IsNullOrEmpty(requisition.detalleRequisicion) || requisition.precioUnitario <= 0)
+                    return false;
+
+                Employees_DTO _employeeDTO = new Employees_DTO(_dbContext);
+                var employee = _employeeDTO.GetEmployee(idEmployee);
+
+                if (employee == null || employee.idPuesto != 1)
+                    return false;
+
+                requisition.idEmpleadoSolicita = idEmployee;
+                requisition.idEstado = 1;
+                requisition.fechaSolicita = DateTime.Now;
+                requisition.fechaGraba = DateTime.Now;
+
+                _dbContext.Requisitions.Add(requisition);
+                _dbContext.SaveChanges();
+
+                return true;
+            }
+            catch(Exception e)
+            {
+                return false;
+            }
+        }
+
         public bool UpdateRequisition(int idRequisition, Requisitions requisition)
         {
             try
             {
                 if (requisition.idRequisicion != idRequisition)
                     return false;
+
+                requisition.fechaGraba = DateTime.Now;
 
                 _dbContext.Entry(requisition).State = EntityState.Modified;
                 _dbContext.SaveChanges();
