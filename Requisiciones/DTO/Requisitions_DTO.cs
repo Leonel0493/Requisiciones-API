@@ -54,13 +54,39 @@ namespace Requisiciones.DTO
 
                 if (requisition == null)
                     return requisition;
+                
+                Employees_DTO _employeeDTO = new Employees_DTO(_dbContext);
+                var employeeInfo = _employeeDTO.GetEmployee(idEmployee);
 
-                if((requisition.idEstado == 1 || requisition.idEstado == 2))
+                if ((requisition.idEstado == 1 || requisition.idEstado == 3) && employeeInfo.idPuesto == 1)
+                    return requisition;
+
+                if (requisition.idEstado == 2 && employeeInfo.idPuesto == 1)
+                    return requisition;
+
+                return null;
             }
             catch(Exception e)
             {
-                requisition = null;
-                return requisition;
+                return null;
+            }
+        }
+
+        public bool UpdateRequisition(int idRequisition, Requisitions requisition)
+        {
+            try
+            {
+                if (requisition.idRequisicion != idRequisition)
+                    return false;
+
+                _dbContext.Entry(requisition).State = EntityState.Modified;
+                _dbContext.SaveChanges();
+
+                return true;
+            }
+            catch(Exception e)
+            {
+                return false;
             }
         }
     }
